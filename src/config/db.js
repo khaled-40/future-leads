@@ -4,7 +4,7 @@ let client;
 let db;
 
 const connectDB = async () => {
-    if (db) return db; // reuse existing connection
+    if (db) return db;
 
     try {
         const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.uk3n3pp.mongodb.net/?appName=Cluster0`;
@@ -19,7 +19,7 @@ const connectDB = async () => {
 
         await client.connect();
 
-        db = client.db('future_lead');
+        db = client.db('future-lead');
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
@@ -27,8 +27,8 @@ const connectDB = async () => {
         console.log('MongoDB connected');
 
         return db;
-    } catch {
-        console.error('MongoDB connection failed:', error.message);
+    } catch(error) {
+        console.error('MongoDB connection failed:',error);
 
         // Critical: reset state so retry works
         db = null;
