@@ -9,9 +9,9 @@
 // dependencies
 const express = require('express');
 const router = express.Router();
-const { createLead, getAllLeads, getSpecificLeadById } = require("../controllers/leads.controller");
+const { createLead, getAllLeads, getSpecificLeadById, updateLead, deleteLead } = require("../controllers/leads.controller");
 const validate = require("../middlewares/validate");
-const { createLeadsSchema } = require("../validators/leads.validator");
+const { createLeadsSchema, updateLeadSchema } = require("../validators/leads.validator");
 
 // api routes
 router.post('/', validate(createLeadsSchema), createLead);
@@ -19,6 +19,10 @@ router.post('/', validate(createLeadsSchema), createLead);
 router.get('/', getAllLeads);
 
 router.get('/:id', getSpecificLeadById);
+
+router.patch('/:id',validate(updateLeadSchema), updateLead);
+
+router.delete('/:id',deleteLead);
 
 // export the router
 module.exports = router;

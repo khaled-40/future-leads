@@ -65,5 +65,31 @@ const createLeadsSchema = joi.object({
     created_at: joi.date().default(() => new Date()),
 });
 
+const updateLeadSchema = joi.object({
+    name: joi.string().trim().min(2).max(100),
+    email: joi.string().email(),
+    platform: joi.string().valid(...PLATFORM_ENUM),
+    source_url: joi.string().uri(),
+    niche: joi.string().trim().min(2).max(100),
+    status: joi.string().valid(...STATUS_ENUM),
+    lead_score: joi.number().min(0).max(100),
+
+    score_breakdown: joi.object({
+        ability: joi.number().min(0).max(30),
+        need: joi.number().min(0).max(30),
+        authority: joi.number().min(0).max(20),
+        reachability: joi.number().min(0).max(20),
+    }),
+
+    last_contacted_at: joi.date(),
+    next_followup_at: joi.date().greater('now'),
+    followup_count: joi.number().integer().min(0).max(3),
+    notes: joi.string().max(1000)
+})
+.min(1);
+
 // export the variable
-module.exports = { createLeadsSchema };
+module.exports = {
+    createLeadsSchema,
+    updateLeadSchema
+};

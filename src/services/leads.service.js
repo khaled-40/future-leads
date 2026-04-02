@@ -25,9 +25,7 @@ const createLead = async (data) => {
 
         const result = await leads.insertOne(data);
 
-        return {
-            id: result.insertedId
-        };
+        return result;
     } catch (err) {
         console.log(err.message)
     }
@@ -49,9 +47,53 @@ const getSpecificLeadById = async (id) => {
     return result;
 }
 
+const updateLead = async (id, payload) => {
+    const { leads } = await getCollections();
+
+    const result = await leads.updateOne(
+        { _id: new ObjectId(id) },
+        {
+            $set: {
+                ...payload,
+                updated_at: new Date()
+            }
+        }
+    );
+
+    if (result.matchedCount === 0) {
+        console.log('Lead not found');
+    }
+
+    return result;
+};
+
+const deleteLead = async (id) => {
+    const { leads } = await getCollections();
+
+    //  safety check
+    if (!ObjectId.isValid(id)) {
+        throw new Error('Invalid lead ID');
+    }
+
+    const result = await leads.deleteOne({
+        _id: new ObjectId(id)
+    });
+
+    if (result.deletedCount === 0) {
+        throw new Error('Lead not found');
+    }
+
+    return {
+        deleted: true,
+        id
+    };
+}
+
 // export the function 
 module.exports = {
     createLead,
     getAllLeads,
-    getSpecificLeadById
+    getSpecificLeadById,
+    updateLead,
+    deleteLead
 };
