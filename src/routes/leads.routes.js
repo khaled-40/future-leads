@@ -9,12 +9,16 @@
 // dependencies
 const express = require('express');
 const router = express.Router();
-const { createLead } = require("../controllers/leads.controller");
+const { createLead, getAllLeads, getSpecificLeadById } = require("../controllers/leads.controller");
 const validate = require("../middlewares/validate");
 const { createLeadsSchema } = require("../validators/leads.validator");
 
 // api routes
-router.post('/', validate(createLeadsSchema), createLead)
+router.post('/', validate(createLeadsSchema), createLead);
+
+router.get('/', getAllLeads);
+
+router.get('/:id', getSpecificLeadById);
 
 // export the router
 module.exports = router;

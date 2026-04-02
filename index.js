@@ -21,6 +21,7 @@ app.get('/', (req, res) => {
   res.send('Hello World!')
 })
 
+app.use('/api/leads', leadRoutes);
 app.use('/api/leads', leadRoutes)
 
 // start the server

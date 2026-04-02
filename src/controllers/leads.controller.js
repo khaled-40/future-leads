@@ -22,7 +22,42 @@ const createLead = async (req, res) => {
     }
 };
 
+const getAllLeads = async (req, res) => {
+    try {
+        const leads = await leadService.getAllLeads();
+
+        res.status(200).json({
+            success: true,
+            data: leads,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Internal Server Error',
+        });
+    }
+}
+
+const getSpecificLeadById = async (req, res) => {
+    try {
+        const id = req.params.id;
+        const lead = await leadService.getSpecificLeadById(id);
+
+        res.status(200).json({
+            success: true,
+            data: lead,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Internal Server Error',
+        });
+    }
+}
+
 // export the function
 module.exports = {
     createLead,
+    getAllLeads,
+    getSpecificLeadById
 }
