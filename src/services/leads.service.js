@@ -25,7 +25,8 @@ const createLead = async (data) => {
 
         const leadDoc = {
             ...data,
-            followup_count : 0
+            followup_count: 0,
+            next_followup_at: new Date(Date.now() + 80 * 1000)
         }
 
         const result = await leads.insertOne(leadDoc);

@@ -52,7 +52,7 @@ const createLeadsSchema = joi.object({
 
     last_contacted_at: joi.date().optional(),
 
-    next_followup_at: joi.date().greater('now').optional(),
+    // next_followup_at: joi.date().greater('now').optional(),
 
     followup_count: joi.forbidden(),
 

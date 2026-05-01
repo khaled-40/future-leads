@@ -1,13 +1,14 @@
 // workers/followup.worker.js
 const cron = require('node-cron');
-const { getCollections } = require('../config/db');
 const { addDays } = require('../utils/date.util');
+const { getCollections } = require('../models/collections');
 
 
 const startFollowupWorker = () => {
-    cron.schedule('*/10 * * * *', async () => {
+    cron.schedule('*/1 * * * *', async () => {
         try {
             const { leads, tasks } = await getCollections();
+            console.log(`[Worker] Running at ${new Date().toISOString()}`);
             const now = new Date();
 
             // STEP 1: find eligible leads
@@ -56,6 +57,7 @@ const startFollowupWorker = () => {
             await leads.bulkWrite(updateOps);
 
             console.log(`[Worker] Created ${taskDocs.length} follow-up tasks`);
+
 
         } catch (err) {
             console.error('[Worker Error]', err.message);
