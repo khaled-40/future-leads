@@ -22,7 +22,6 @@ app.get('/', (req, res) => {
 })
 
 app.use('/api/leads', leadRoutes);
-app.use('/api/leads', leadRoutes)
 
 // start the server
 const startServer = async () => {

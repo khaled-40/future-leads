@@ -23,7 +23,12 @@ const createLead = async (data) => {
             throw new Error('Lead with this email already exists', 409);
         }
 
-        const result = await leads.insertOne(data);
+        const leadDoc = {
+            ...data,
+            followup_count : 0
+        }
+
+        const result = await leads.insertOne(leadDoc);
 
         return result;
     } catch (err) {

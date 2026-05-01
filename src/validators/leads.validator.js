@@ -54,11 +54,7 @@ const createLeadsSchema = joi.object({
 
     next_followup_at: joi.date().greater('now').optional(),
 
-    followup_count: joi.number()
-        .integer()
-        .min(0)
-        .max(3)
-        .default(0),
+    followup_count: joi.forbidden(),
 
     notes: joi.string().max(1000).optional(),
 
@@ -83,7 +79,7 @@ const updateLeadSchema = joi.object({
 
     last_contacted_at: joi.date(),
     next_followup_at: joi.date().greater('now'),
-    followup_count: joi.number().integer().min(0).max(3),
+    followup_count: joi.number().integer().min(0).max(4),
     notes: joi.string().max(1000)
 })
 .min(1);
