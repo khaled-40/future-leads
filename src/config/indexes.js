@@ -6,8 +6,8 @@ const ensureIndexes = async () => {
 
     // Enforce idempotency
     await tasks.createIndex(
-        { lead_id: 1, followup_stage: 1 },
-        { unique: true }
+        { lead_id: 1, followup_stage: 1, status: 1 },
+        { unique: true, partialFilterExpression: { status: 'pending' } }
     );
 
     // Speed up worker query

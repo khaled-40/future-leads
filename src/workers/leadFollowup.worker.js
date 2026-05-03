@@ -4,67 +4,108 @@ const { addDays } = require('../utils/date.util');
 const { getCollections } = require('../models/collections');
 
 
+const FOLLOWUP_DELAYS = [4, 5, 6];
+
 const startFollowupWorker = () => {
     cron.schedule('*/1 * * * *', async () => {
-        try {
-            const { leads, tasks } = await getCollections();
-            console.log(`[Worker] Running at ${new Date().toISOString()}`);
-            const now = new Date();
 
-            // STEP 1: find eligible leads
-            const dueLeads = await leads.find({
-                has_replied: { $ne: true },
-                next_followup_at: { $lte: now },
-                followup_count: { $lt: 3 }
-            }).toArray();
+        const { leads, tasks } = await getCollections();
+        console.log(`[Worker] Running at ${new Date().toISOString()}`);
+        const now = new Date();
 
-            if (!dueLeads.length) return;
+        while (true) {
 
-            // STEP 2: create tasks
-            const taskDocs = dueLeads.map(lead => ({
-                lead_id: lead._id,
-                type: 'follow_up',
-                followup_stage: lead.followup_count + 1,
-                status: 'pending',
-                created_at: now
-            }));
+            try {
 
-            await tasks.insertMany(taskDocs);
+                // STEP 1: Atomically CLAIM one lead
+                const lead = await leads.findOneAndUpdate(
+                    {
+                        has_replied: { $ne: true },
+                        next_followup_at: { $lte: now },
+                        followup_count: { $lt: 3 },
+                        processing: { $ne: true }
+                    },
+                    {
+                        $set: { processing: true }
+                    },
+                    { returnDocument: 'after' }
+                );
 
-            // STEP 3: update leads (schedule next followup)
-            const updateOps = dueLeads.map(lead => {
-                let nextDelay = null;
+                // No more work → exit loop
+                if (!lead) break;
 
-                if (lead.followup_count === 0) nextDelay = 4;
-                else if (lead.followup_count === 1) nextDelay = 5;
-                else nextDelay = null; // stop after 3rd
-
-                return {
-                    updateOne: {
-                        filter: { _id: lead._id },
-                        update: {
-                            $inc: { followup_count: 1 },
-                            $set: {
-                                last_contacted_at: now,
-                                status: 'contacted',
-                                next_followup_at: nextDelay ? addDays(nextDelay) : null
-                            }
+                // try {
+                const taskResult = await tasks.updateOne(
+                    {
+                        lead_id: lead._id,
+                        status: 'pending'
+                    },
+                    {
+                        $setOnInsert: {
+                            lead_id: lead._id,
+                            type: 'follow_up',
+                            followup_stage: lead.followup_count + 1,
+                            status: 'pending',
+                            created_at: now
                         }
+                    },
+                    { upsert: true }
+                );
+
+                // Update lead ONLY if task created
+                if (taskResult.upsertedCount === 1) {
+                    const nextDelay = FOLLOWUP_DELAYS[lead.followup_count] ?? null;
+
+                    const updateFields = {};
+
+                    if (nextDelay !== null) {
+                        updateFields.next_followup_at = addDays(nextDelay);
+                    } else {
+                        updateFields.next_followup_at = null;
+                        updateFields.followup_completed = true; // terminal state
                     }
-                };
-            });
-
-            await leads.bulkWrite(updateOps);
-
-            console.log(`[Worker] Created ${taskDocs.length} follow-up tasks`);
 
 
-        } catch (err) {
-            console.error('[Worker Error]', err.message);
+                    await leads.updateOne(
+                        { _id: lead._id },
+                        {
+                            $set: updateFields,
+                            $currentDate: { last_contacted_at: true },
+                            $unset: { processing: "" }
+                        }
+                    );
+
+
+                } else {
+                    // Task already exists → just release the lock
+                    await leads.updateOne(
+                        { _id: lead._id },
+                        { $unset: { processing: "" } }
+                    );
+                }
+
+                // console.log(`[Worker] Created ${taskDocs.length} follow-up tasks`);
+                // } catch (err) {
+                //     if (err.code !== 11000) {
+                //         console.error('[Worker Error]', err.message);
+                //     }
+                // }
+
+            } catch (err) {
+                console.error('[Worker Error]', err.message);
+
+                // IMPORTANT: release lock if something fails
+                if (lead?._id) {
+                    await leads.updateOne(
+                        { _id: lead._id },
+                        { $unset: { processing: "" } }
+                    );
+                }
+            }
         }
-    }, {
-        timezone: "Asia/Dhaka"
-    });
-};
-
+    },
+        {
+            timezone: "Asia/Dhaka"
+        });
+}
 module.exports = startFollowupWorker;
